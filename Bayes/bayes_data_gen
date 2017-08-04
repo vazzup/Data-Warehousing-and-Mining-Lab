@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+import random
+print(4)
+print('Studious, Non Studious')
+print('Dead KT, No KT')
+print('Likes Subject, Does not like Subject')
+print('Failed, Passed')
+
+for i in range(40):
+	print(random.choice(['Studious', 'Non Studious']), end=',')
+	print(random.choice(['Dead KT', 'No KT']), end=',')
+	print(random.choice(['Likes Subject', 'Does not like Subject']), end=',')
+	print(random.choice(['Failed', 'Passed']))
