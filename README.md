@@ -1,4 +1,4 @@
-# Code for Computer Systems and Security Lab
+# Code for Data Warehousing and Mining Lab
 ### Index:
 1. K means
 2. K means (2D)
