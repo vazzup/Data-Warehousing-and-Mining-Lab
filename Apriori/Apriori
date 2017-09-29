@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+def main():
+	n = int(input('Enter the number of tuples').strip())
+	t = []
+	for j in range(n):
+		t = t.append(list(map(int, input().strip().split())))
+	c = dict()
+	for i in t:
+		for j in i:
+			if j in c:
+				c[j] += 1
+			else:
+				c[j] = 1
+	l = set()
+	for k, v in c:
+		if v >= threshold:
+			
+	apriori(t, threshold)
+	return
+
+def apriori(t, threshold):
+	return
+if __name__ = '__main__':
+	main()
