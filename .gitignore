@@ -1,0 +1,6 @@
+DataWarehousing/bin
+DataWarehousing/include
+DataWarehousing/lib
+DataWarehousing/share
+*.swp
+*~
