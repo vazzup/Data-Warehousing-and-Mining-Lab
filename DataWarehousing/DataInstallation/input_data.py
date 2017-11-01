@@ -64,7 +64,6 @@ def insert_customers(conn, curs):
         if first_row:
             first_row = False
             continue
-        print(sql.format(*row))
         curs.execute(sql.format(*row))
     conn.commit()
     return
@@ -80,7 +79,6 @@ def insert_regions(conn, curs):
         if first_row:
             first_row = False
             continue
-        print(sql.format(*row))
         curs.execute(sql.format(*row))
     conn.commit()
     return
@@ -96,14 +94,13 @@ def insert_plans(conn, curs):
         if first_row:
             first_row = False
             continue
-        print(sql.format(*row))
         curs.execute(sql.format(*row))
     conn.commit()
     return
 
 def insert_plans(conn, curs):
     sql = 'INSERT INTO plans VALUES({0}, {1}, {2}, {3}, {4});'
-    csv_data = csv.reader(open('plans.csv'))
+    csv_data = csv.reader(open('plans.xlsx'))
     first_row = True
     for row in csv_data:
         for i in range(len(row)):
@@ -112,7 +109,6 @@ def insert_plans(conn, curs):
         if first_row:
             first_row = False
             continue
-        print(sql.format(*row))
         curs.execute(sql.format(*row))
     conn.commit()
     return
@@ -128,7 +124,6 @@ def insert_revenue(conn, curs):
         if first_row:
             first_row = False
             continue
-        print(sql.format(*row))
         curs.execute(sql.format(*row))
     conn.commit()
     return
@@ -138,7 +133,6 @@ def cleanup(conn, curs):
             (call_usg IS NULL) OR\
             (data_usg IS NULL) OR\
             (sms_usg IS NULL);'
-    print(sql)
     curs.execute(sql)
     conn.commit()
     return
@@ -163,6 +157,72 @@ def update_revenue(conn, curs):
     conn.commit()
     return
 
+def get_slice_query(conn, curs):
+    sql = 'SELECT * FROM (revenue a INNER JOIN plans b ON a.plan_code = b.code INNER JOIN customers c ON a.phone_no = c.phone_no INNER JOIN regions d ON a.region_code = d.code) WHERE d.type = \'rural\';'
+    curs.execute(sql)
+    rows = curs.fetchall()
+    print('The rural users are...')
+    max_len = [0] * len(rows[0])
+
+    rows = list(rows)
+
+    for i in range(len(rows)):
+        rows[i] = list(map(str, list(rows[i])))
+
+    for row in rows:
+        i = 0
+        for datum in row:
+            max_len[i] = max(max_len[i], len(datum))
+            i += 1
+
+    for i in range(len(rows)):
+        for j in range(len(rows[i])):
+            if len(str(rows[i][j])) < max_len[j]:
+                rows[i][j] = rows[i][j] + (" " * (max_len[j] - len(rows[i][j])))
+
+    for row in rows:
+        for item in row:
+            print(item, end = ' ')
+        print()
+    sql = 'SELECT sum(a.revenue_m), sum(a.revenue_over) FROM (revenue a INNER JOIN plans b ON a.plan_code = b.code INNER JOIN customers c ON a.phone_no = c.phone_no INNER JOIN regions d ON a.region_code = d.code) WHERE d.type = \'rural\';'
+    curs.execute(sql)
+    row = curs.fetchone()
+    print('The total monthly revenue is {0} and the revenue due to overuse is {1} from rural areas'.format(row[0], row[1]))
+    return
+
+def get_dice_query(conn, curs):
+    sql = 'SELECT * FROM (revenue a INNER JOIN plans b ON a.plan_code = b.code INNER JOIN customers c ON a.phone_no = c.phone_no INNER JOIN regions d ON a.region_code = d.code) WHERE d.type = \'urban\' AND a.revenue_m > 200;'
+    curs.execute(sql)
+    rows = curs.fetchall()
+    print('The urban users with monthly revenue greater than 200 are...')
+    max_len = [0] * len(rows[0])
+
+    rows = list(rows)
+
+    for i in range(len(rows)):
+        rows[i] = list(map(str, list(rows[i])))
+
+    for row in rows:
+        i = 0
+        for datum in row:
+            max_len[i] = max(max_len[i], len(datum))
+            i += 1
+
+    for i in range(len(rows)):
+        for j in range(len(rows[i])):
+            if len(str(rows[i][j])) < max_len[j]:
+                rows[i][j] = rows[i][j] + (" " * (max_len[j] - len(rows[i][j])))
+
+    for row in rows:
+        for item in row:
+            print(item, end = ' ')
+        print()
+    sql = 'SELECT sum(a.revenue_m), sum(a.revenue_over) FROM (revenue a INNER JOIN plans b ON a.plan_code = b.code INNER JOIN customers c ON a.phone_no = c.phone_no INNER JOIN regions d ON a.region_code = d.code) WHERE d.type = \'urban\' AND a.revenue_m > 200;'
+    curs.execute(sql)
+    row = curs.fetchone()
+    print('The total monthly revenue is {0} and the revenue due to overuse is {1} from rural areas'.format(row[0], row[1]))
+    return
+
 def main():
     hostname, username, password, database = 'localhost', 'root', 'dwmissucks'\
                                                                         , 'DWM'
@@ -171,13 +231,24 @@ def main():
                         passwd=password,
                         db=database)
     curs = conn.cursor()
+    print('Creating tables...')
     create_tables(curs)
+    print('Read from and insert data into customers...')
     insert_customers(conn, curs)
+    print('Read from and insert data into regions...')
     insert_regions(conn, curs)
+    print('Read from and insert data into plans...')
     insert_plans(conn, curs)
-    insert_revenue(conn, curs)
+    print('Cleanup NULL values in all three tables...')
     cleanup(conn, curs)
+    print('Insert data into revenue table...')
+    insert_revenue(conn, curs)
+    print('Calculate NULL column values and update in revenue table...')
     update_revenue(conn, curs)
+    print('Execute slice... Find details of customers from rural areas...')
+    get_slice_query(conn, curs)
+    print('Execute dice... Find details of customers from urban areas with monthly revenue more than 200...')
+    get_dice_query(conn, curs)
     return
 
 if __name__ == '__main__':
